@@ -41,7 +41,23 @@ describe("SSL", function()
       http_if_terminated = false,
     })
 
-    assert(helpers.start_kong())
+    assert(helpers.dao.apis:insert {
+      name = "api-3",
+      hosts = { "ssl3.com" },
+      upstream_url = "https://localhost:10001",
+      preserve_host = true,
+    })
+
+    assert(helpers.dao.apis:insert {
+      name = "api-4",
+      hosts = { "no-sni.com" },
+      upstream_url = "https://localhost:10002",
+      preserve_host = false,
+    })
+
+    assert(helpers.start_kong {
+      nginx_conf = "spec/fixtures/custom_nginx.template",
+    })
 
     admin_client = helpers.admin_client()
     client = helpers.proxy_client()
@@ -145,6 +161,33 @@ describe("SSL", function()
     end)
   end)
 
+  describe("proxy_ssl_name", function()
+    describe("properly sets the upstream SNI with preserve_host", function()
+      it("true", function()
+        local res = assert(https_client:send {
+          method = "GET",
+          path = "/ssl-inspect",
+          headers = {
+            Host = "ssl3.com"
+          }
+        })
+        local body = assert.res_status(200, res)
+        assert.equal("ssl3.com", body)
+      end)
+
+      it("false", function()
+        local res = assert(https_client:send {
+          method = "GET",
+          path = "/ssl-inspect",
+          headers = {
+            Host = "no-sni.com"
+          }
+        })
+        local body = assert.res_status(200, res)
+        assert.equal("localhost", body)
+      end)
+    end)
+  end)
 end)
 
 describe("SSL certificates and SNIs invalidations", function()
