@@ -6,6 +6,8 @@
   status and message. Thanks to [Paul Austin](https://github.com/pauldaustin)
   for the contribution.
   [#2051](https://github.com/Mashape/kong/pull/2051)
+- File-log plugin now has a new `valid` setting (in seconds) to close and 
+  reopen the logfiles automatically which enables rotating the logs.
 
 ## [0.10.1] - 2017/03/27
 
